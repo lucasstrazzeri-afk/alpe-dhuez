@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a365d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Alpe d'Huez</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #1a365d;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --accent: #3b82f6;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.1);
+            padding: 16px;
+            text-align: center;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 { font-size: 20px; }
+        .header small { opacity: 0.7; font-size: 12px; }
+        
+        .offline-bar {
+            background: var(--orange);
+            color: #000;
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            display: none;
+        }
+        .offline-bar.show { display: block; }
+        
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        
+        .tab {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            background: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tab.active { color: white; border-bottom: 2px solid white; }
+        
+        .content { padding: 16px; padding-bottom: 80px; }
+        
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .weather-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .weather-temp { font-size: 42px; font-weight: 700; }
+        .weather-desc { color: var(--text-light); font-size: 14px; }
+        .weather-icon { font-size: 48px; }
+        
+        .weather-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .stat-value { font-size: 18px; font-weight: 700; color: var(--bg); }
+        .stat-label { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .alert-ok { background: #dcfce7; color: #166534; }
+        .alert-warning { background: #fef3c7; color: #92400e; }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+        .alert-icon { font-size: 20px; }
+        
+        .forecast {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+        .forecast::-webkit-scrollbar { display: none; }
+        
+        .forecast-day {
+            flex: 0 0 70px;
+            text-align: center;
+            padding: 10px 8px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .forecast-day-name { font-size: 11px; color: var(--text-light); }
+        .forecast-day-icon { font-size: 22px; margin: 6px 0; }
+        .forecast-day-temp { font-size: 13px; font-weight: 600; }
+        .forecast-day-snow { font-size: 10px; color: var(--accent); margin-top: 4px; }
+        
+        .webcam-grid { display: grid; gap: 12px; }
+        
+        .webcam-item {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .webcam-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #e2e8f0;
+            display: block;
+        }
+        
+        .webcam-iframe {
+            width: 100%;
+            height: 250px;
+            border: none;
+            background: #1a365d;
+        }
+        
+        .webcam-label {
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .webcam-alt {
+            font-size: 11px;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--text-light);
+        }
+        
+        .road-item {
+            display: flex;
+            gap: 12px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .road-img {
+            width: 100px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #e2e8f0;
+        }
+        .road-name { font-weight: 600; font-size: 14px; }
+        .road-desc { font-size: 12px; color: var(--text-light); }
+        
+        .snow-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .snow-box {
+            text-align: center;
+            padding: 14px 10px;
+            background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+            border-radius: 10px;
+        }
+        .snow-label { font-size: 11px; color: var(--text-light); }
+        .snow-value { font-size: 26px; font-weight: 700; color: var(--bg); margin: 4px 0; }
+        .snow-unit { font-size: 11px; color: var(--text-light); }
+        
+        .avalanche-box {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .avalanche-level {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+        }
+        .level-1 { background: #22c55e; }
+        .level-2 { background: #84cc16; }
+        .level-3 { background: #f59e0b; }
+        .level-4 { background: #f97316; }
+        .level-5 { background: #ef4444; }
+        
+        .avalanche-text h3 { font-size: 16px; margin-bottom: 4px; }
+        .avalanche-text p { font-size: 13px; color: var(--text-light); }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--bg);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+        .btn-secondary { background: #64748b; }
+        
+        .emergency { line-height: 2; font-size: 15px; }
+        .emergency a { color: var(--bg); }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid #e2e8f0;
+            border-top-color: var(--bg);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .last-update {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 20px;
+        }
+        
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-bar" id="offlineBar">⚠️ Mode hors-ligne</div>
+    
+    <header class="header">
+        <h1>⛷️ Alpe d'Huez</h1>
+        <small id="dateDisplay"></small>
+    </header>
+    
+    <nav class="tabs">
+        <button class="tab active" data-page="meteo">☀️ Météo</button>
+        <button class="tab" data-page="webcams">📷 Webcams</button>
+        <button class="tab" data-page="neige">❄️ Neige</button>
+        <button class="tab" data-page="route">🚗 Route</button>
+        <button class="tab" data-page="infos">ℹ️ Infos</button>
+    </nav>
+    
+    <main class="content">
+        <!-- MÉTÉO -->
+        <div class="page active" id="meteo">
+            <div id="windAlert"></div>
+            
+            <div class="card">
+                <div class="card-title">🏔️ Sommet · 3 330m</div>
+                <div class="weather-box">
+                    <div>
+                        <div class="weather-temp" id="summitTemp">--°</div>
+                        <div class="weather-desc" id="summitDesc">Chargement...</div>
+                    </div>
+                    <div class="weather-icon" id="summitIcon">⏳</div>
+                </div>
+                <div class="weather-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="summitWind">--</div>
+                        <div class="stat-label">Vent km/h</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="summitGusts">--</div>
+                        <div class="stat-label">Rafales km/h</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="summitSnow">--</div>
+                        <div class="stat-label">Neige 24h</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">🏠 Station · 1 860m</div>
+                <div class="weather-box">
+                    <div>
+                        <div class="weather-temp" id="stationTemp">--°</div>
+                        <div class="weather-desc" id="stationDesc">Chargement...</div>
+                    </div>
+                    <div class="weather-icon" id="stationIcon">⏳</div>
+                </div>
+                <div class="weather-stats">
+                    <div class="stat">
+                        <div class="stat-value" id="stationWind">--</div>
+                        <div class="stat-label">Vent km/h</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="stationHumidity">--%</div>
+                        <div class="stat-label">Humidité</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="stationVisibility">--</div>
+                        <div class="stat-label">Visibilité km</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📅 Prévisions 7 jours</div>
+                <div class="forecast" id="forecast">
+                    <div class="loading"><div class="spinner"></div></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- WEBCAMS -->
+        <div class="page" id="webcams">
+            <div class="webcam-grid" id="webcamGrid">
+                <div class="loading"><div class="spinner"></div>Chargement des webcams...</div>
+            </div>
+        </div>
+        
+        <!-- NEIGE -->
+        <div class="page" id="neige">
+            <div class="card">
+                <div class="card-title">🌨️ Chutes prévues</div>
+                <div class="snow-grid">
+                    <div class="snow-box">
+                        <div class="snow-label">24h</div>
+                        <div class="snow-value" id="snow24">--</div>
+                        <div class="snow-unit">cm</div>
+                    </div>
+                    <div class="snow-box">
+                        <div class="snow-label">48h</div>
+                        <div class="snow-value" id="snow48">--</div>
+                        <div class="snow-unit">cm</div>
+                    </div>
+                    <div class="snow-box">
+                        <div class="snow-label">7 jours</div>
+                        <div class="snow-value" id="snow7d">--</div>
+                        <div class="snow-unit">cm</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">⚠️ Risque avalanche · Oisans</div>
+                <div class="avalanche-box">
+                    <div class="avalanche-level level-2" id="avLevel">2</div>
+                    <div class="avalanche-text">
+                        <h3 id="avTitle">Limité</h3>
+                        <p id="avDesc">Conditions généralement favorables</p>
+                    </div>
+                </div>
+                <a href="https://meteofrance.com/meteo-montagne/alpes-du-nord/risques-avalanche" target="_blank" class="btn btn-secondary">
+                    📋 Bulletin complet
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📊 Échelle avalanche</div>
+                <div style="font-size:13px; line-height:2;">
+                    <div>🟢 <b>1</b> - Faible</div>
+                    <div>🟡 <b>2</b> - Limité</div>
+                    <div>🟠 <b>3</b> - Marqué</div>
+                    <div>🟠 <b>4</b> - Fort</div>
+                    <div>🔴 <b>5</b> - Très fort</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ROUTE -->
+        <div class="page" id="route">
+            <div class="card">
+                <div class="card-title">🚗 Webcams routières</div>
+                <div id="roadCams">
+                    <div class="loading"><div class="spinner"></div>Chargement...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- INFOS -->
+        <div class="page" id="infos">
+            <div class="card">
+                <div class="card-title">🗺️ Plan des pistes</div>
+                <a href="https://skipass.alpedhuez.com/hiver/en/piste-map/" target="_blank" class="btn">
+                    Voir le plan interactif
+                </a>
+                <a href="https://www.seealpedhuez.com/maps" target="_blank" class="btn btn-secondary">
+                    Télécharger PDF
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">🎿 État des pistes</div>
+                <p style="font-size:14px; color: var(--text-light); margin-bottom:12px;">
+                    Saison: 6 déc 2025 - 19 avr 2026<br>
+                    Horaires: 9h00 - 17h30
+                </p>
+                <a href="https://www.seealpedhuez.com/lifts/status" target="_blank" class="btn">
+                    Voir remontées ouvertes
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📞 Urgences</div>
+                <div class="emergency">
+                    🚨 Secours pistes: <a href="tel:+33476803030">04 76 80 30 30</a><br>
+                    🏥 SAMU: <a href="tel:15">15</a><br>
+                    ⛑️ PGHM: <a href="tel:+33476800227">04 76 80 02 27</a><br>
+                    ℹ️ Office tourisme: <a href="tel:+33476114444">04 76 11 44 44</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="last-update">Mise à jour: <span id="lastUpdate">--</span></div>
+    </main>
+    
+    <button class="refresh-btn" onclick="loadData()">🔄</button>
+
+    <script>
+        // === CONFIG ===
+        // IMPORTANT: Remplacez cette URL par l'URL de votre Cloudflare Worker
+        const API_URL = 'https://alpe-dhuez-api.lucas-strazzeri.workers.dev/';
+        
+        // === NAVIGATION ===
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.page).classList.add('active');
+            };
+        });
+        
+        // === DATE ===
+        const jours = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const mois = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'];
+        const now = new Date();
+        document.getElementById('dateDisplay').textContent = 
+            `${jours[now.getDay()]} ${now.getDate()} ${mois[now.getMonth()]}`;
+        
+        // === WEATHER CODES ===
+        const weatherInfo = {
+            0: ['☀️', 'Ensoleillé'],
+            1: ['🌤️', 'Peu nuageux'],
+            2: ['⛅', 'Partiellement nuageux'],
+            3: ['☁️', 'Nuageux'],
+            45: ['🌫️', 'Brouillard'],
+            48: ['🌫️', 'Brouillard givrant'],
+            51: ['🌧️', 'Bruine'],
+            53: ['🌧️', 'Bruine'],
+            55: ['🌧️', 'Bruine forte'],
+            61: ['🌧️', 'Pluie légère'],
+            63: ['🌧️', 'Pluie'],
+            65: ['🌧️', 'Pluie forte'],
+            71: ['🌨️', 'Neige légère'],
+            73: ['🌨️', 'Neige'],
+            75: ['❄️', 'Neige forte'],
+            77: ['🌨️', 'Grains de neige'],
+            80: ['🌦️', 'Averses'],
+            81: ['🌦️', 'Averses'],
+            82: ['⛈️', 'Fortes averses'],
+            85: ['🌨️', 'Averses neige'],
+            86: ['❄️', 'Fortes averses neige'],
+            95: ['⛈️', 'Orage'],
+            96: ['⛈️', 'Orage grêle'],
+            99: ['⛈️', 'Orage violent']
+        };
+        
+        function getWeather(code) {
+            return weatherInfo[code] || ['🌤️', 'Variable'];
+        }
+        
+        // === LOAD DATA ===
+        async function loadData() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                
+                // Save to cache
+                localStorage.setItem('alpedhuez_data', JSON.stringify(data));
+                
+                renderWeather(data.weather);
+                renderWebcams(data.webcams);
+                renderRoads(data.roads);
+                
+                document.getElementById('lastUpdate').textContent = 
+                    new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+                    
+            } catch (err) {
+                console.error(err);
+                // Try cache
+                const cached = localStorage.getItem('alpedhuez_data');
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    renderWeather(data.weather);
+                    renderWebcams(data.webcams);
+                    renderRoads(data.roads);
+                    document.getElementById('offlineBar').classList.add('show');
+                }
+            }
+        }
+        
+        // === RENDER WEATHER ===
+        function renderWeather(w) {
+            if (!w) return;
+            
+            // Summit
+            const [sIcon, sDesc] = getWeather(w.summit.weatherCode);
+            document.getElementById('summitTemp').textContent = w.summit.temperature + '°';
+            document.getElementById('summitDesc').textContent = sDesc;
+            document.getElementById('summitIcon').textContent = sIcon;
+            document.getElementById('summitWind').textContent = w.summit.wind;
+            document.getElementById('summitGusts').textContent = w.summit.gusts;
+            document.getElementById('summitSnow').textContent = w.summit.snowfall24h + 'cm';
+            
+            // Station
+            const [stIcon, stDesc] = getWeather(w.station.weatherCode);
+            document.getElementById('stationTemp').textContent = w.station.temperature + '°';
+            document.getElementById('stationDesc').textContent = stDesc;
+            document.getElementById('stationIcon').textContent = stIcon;
+            document.getElementById('stationWind').textContent = w.station.wind;
+            document.getElementById('stationHumidity').textContent = w.station.humidity + '%';
+            document.getElementById('stationVisibility').textContent = w.station.visibility || '--';
+            
+            // Wind alert
+            const alertEl = document.getElementById('windAlert');
+            if (w.summit.gusts > 70) {
+                alertEl.innerHTML = '<div class="alert alert-danger"><span class="alert-icon">🚨</span>Vent très fort (' + w.summit.gusts + ' km/h) - Fermetures probables</div>';
+            } else if (w.summit.gusts > 50) {
+                alertEl.innerHTML = '<div class="alert alert-warning"><span class="alert-icon">⚠️</span>Vent fort (' + w.summit.gusts + ' km/h) - Possible fermetures</div>';
+            } else {
+                alertEl.innerHTML = '<div class="alert alert-ok"><span class="alert-icon">✅</span>Conditions vent OK</div>';
+            }
+            
+            // Forecast
+            const forecastHtml = w.forecast.map(d => {
+                const date = new Date(d.date);
+                const [icon] = getWeather(d.weatherCode);
+                const snow = d.snowfall > 0 ? `❄️+${Math.round(d.snowfall)}cm` : '';
+                return `
+                    <div class="forecast-day">
+                        <div class="forecast-day-name">${jours[date.getDay()]}</div>
+                        <div class="forecast-day-icon">${icon}</div>
+                        <div class="forecast-day-temp">${d.tempMax}° / ${d.tempMin}°</div>
+                        ${snow ? `<div class="forecast-day-snow">${snow}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('forecast').innerHTML = forecastHtml;
+            
+            // Snow
+            document.getElementById('snow24').textContent = Math.round(w.snow.next24h);
+            document.getElementById('snow48').textContent = Math.round(w.snow.next48h);
+            document.getElementById('snow7d').textContent = Math.round(w.snow.next7d);
+        }
+        
+        // === RENDER WEBCAMS ===
+        function renderWebcams(cams) {
+            if (!cams) return;
+            
+            const html = cams.map(cam => {
+                if (cam.type === 'iframe') {
+                    return `
+                        <div class="webcam-item">
+                            <iframe class="webcam-iframe" src="${cam.iframe}" allowfullscreen></iframe>
+                            <div class="webcam-label">${cam.name} <span class="webcam-alt">${cam.altitude}</span></div>
+                        </div>
+                    `;
+                } else if (cam.image) {
+                    return `
+                        <div class="webcam-item">
+                            <img class="webcam-img" src="${cam.image}" alt="${cam.name}">
+                            <div class="webcam-label">${cam.name} <span class="webcam-alt">${cam.altitude}</span></div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="webcam-item">
+                            <div class="webcam-img" style="display:flex;align-items:center;justify-content:center;color:#94a3b8;">Indisponible</div>
+                            <div class="webcam-label">${cam.name} <span class="webcam-alt">${cam.altitude}</span></div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            
+            document.getElementById('webcamGrid').innerHTML = html;
+        }
+        
+        // === RENDER ROADS ===
+        function renderRoads(roads) {
+            if (!roads) return;
+            
+            const html = roads.map(r => `
+                <div class="road-item">
+                    <img class="road-img" src="${r.image || ''}" alt="${r.name}" onerror="this.style.background='#e2e8f0'">
+                    <div>
+                        <div class="road-name">${r.name}</div>
+                        <div class="road-desc">${r.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('roadCams').innerHTML = html;
+        }
+        
+        // === OFFLINE ===
+        window.addEventListener('online', () => {
+            document.getElementById('offlineBar').classList.remove('show');
+            loadData();
+        });
+        window.addEventListener('offline', () => {
+            document.getElementById('offlineBar').classList.add('show');
+        });
+        
+        // === INIT ===
+        loadData();
+        setInterval(loadData, 600000); // Refresh every 10 min
+        
+        // === SERVICE WORKER ===
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
